@@ -149,6 +149,14 @@ class VstPlugin:
     #
 
     def _allocate_array(self, shape, c_type):
+        """
+        as the first param
+        accepts an array of exactly two integers.
+        1. the first will be considered as number of channels (2 = left and right)
+        2. the second is the length of the buffer
+
+        the second param is the the sample data type
+        """
         assert len(shape) == 2
         insides = [(c_type * shape[1])() for i in range(shape[0])]
         out = (POINTER(c_type) * shape[0])(*insides)
