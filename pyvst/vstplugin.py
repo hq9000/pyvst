@@ -19,7 +19,6 @@ from .vstwrap import (
     VstAEffectFlags,
 )
 
-
 # define kEffectMagic CCONST ('V', 's', 't', 'P')
 # or: MAGIC = int.from_bytes(b'VstP', 'big')
 MAGIC = 1450406992
@@ -72,7 +71,7 @@ class VstPlugin:
             ptr = c_void_p()
         with pipes() if not self.verbose else contextlib.suppress():
             output = self._effect.dispatcher(byref(self._effect), c_int32(opcode), c_int32(index),
-                                            vst_int_ptr(value), ptr, c_float(opt))
+                                             vst_int_ptr(value), ptr, c_float(opt))
         return output
 
     # Parameters
@@ -151,7 +150,7 @@ class VstPlugin:
     def _allocate_array(self, shape, c_type):
         """
         as the first param
-        accepts an array of exactly two integers.
+        accepts an array or a tuple of exactly two integers.
         1. the first will be considered as number of channels (2 = left and right)
         2. the second is the length of the buffer
 
@@ -161,6 +160,54 @@ class VstPlugin:
         insides = [(c_type * shape[1])() for i in range(shape[0])]
         out = (POINTER(c_type) * shape[0])(*insides)
         return out
+
+    def process_replacing(self, inputs, outputs):
+        """
+        given two numpy ndarrays, writes some data into outputs.
+        Importantly, does not allocate any buffers, everything is expected to be
+        provided by the caller
+
+        :type inputs: np.ndarray
+        :type outputs: np.ndarray
+
+        :return: None
+        """
+        assert inputs.dtype == outputs.dtype
+        assert inputs.shape[0] == self.num_inputs
+        assert outputs.shape[0] == self.num_outputs
+
+        if inputs.dtype == np.float32:
+            is_double = False
+        elif inputs.dtype == np.float64:
+            is_double = True
+        else:
+            raise ValueError("input type is neither float32 nor float64")
+
+        if is_double and not self.can_double_replacing:
+            raise ValueError("input is float64 but this plugin does not support it")
+
+        if is_double:
+            c_type = c_double
+            process_fn = self._effect.process_double_replacing
+        else:
+            c_type = c_float
+            process_fn = self._effect.process_replacing
+
+        sample_frames = inputs.shape[1]
+        inputs_as_ctypes = (POINTER(c_type) * self.num_inputs)(*[row.ctypes.data_as(POINTER(c_type))
+                                                                 for row in inputs])
+        outputs_as_ctypes = (POINTER(c_type) * self.num_outputs)(*[row.ctypes.data_as(POINTER(c_type))
+                                                                   for row in outputs])
+
+        with pipes() if not self.verbose else contextlib.suppress():
+            process_fn(
+                byref(self._effect),
+                inputs_as_ctypes,
+                outputs_as_ctypes,
+                sample_frames,
+            )
+
+        pass
 
     def process(self, input=None, sample_frames=None, double=None):
 
