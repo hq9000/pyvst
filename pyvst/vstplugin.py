@@ -161,30 +161,31 @@ class VstPlugin:
         out = (POINTER(c_type) * shape[0])(*insides)
         return out
 
-    def process_replacing(self, inputs, outputs):
+    def process_replacing(self, outputs, inputs=None):
         """
         given two numpy ndarrays, writes some data into outputs.
         Importantly, does not allocate any buffers, everything is expected to be
         provided by the caller
 
-        :type inputs: np.ndarray
+        :type inputs: np.ndarray|None
         :type outputs: np.ndarray
 
         :return: None
         """
-        assert inputs.dtype == outputs.dtype
-        assert inputs.shape[0] == self.num_inputs
-        assert outputs.shape[0] == self.num_outputs
+        if inputs is not None:
+            assert inputs.dtype == outputs.dtype
+            assert inputs.shape[0] == self.num_inputs
+            assert outputs.shape[0] == self.num_outputs
 
-        if inputs.dtype == np.float32:
+        if outputs.dtype == np.float32:
             is_double = False
-        elif inputs.dtype == np.float64:
+        elif outputs.dtype == np.float64:
             is_double = True
         else:
-            raise ValueError("input type is neither float32 nor float64")
+            raise ValueError("requested processing precision is neither float32 nor float64")
 
         if is_double and not self.can_double_replacing:
-            raise ValueError("input is float64 but this plugin does not support it")
+            raise ValueError("float64 processing requested but this plugin does not support it")
 
         if is_double:
             c_type = c_double
