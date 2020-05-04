@@ -29,17 +29,17 @@ _VST_EFFECTS = _find_test_effects()
 
 
 @pytest.fixture(params=_VST_SYNTHS)
-def vst_synths(request):
+def vst_synth(request):
     return request.param
 
 
 @pytest.fixture(params=_VST_EFFECTS)
-def vst_effects(request):
+def vst_effect(request):
     return request.param
 
 
 @pytest.fixture()
-def host(vst_synths):
+def host(vst_synth):
     """SimpleHost containing a loaded synth vst."""
-    host = SimpleHost(vst_synths)
+    host = SimpleHost(vst_synth)
     return host

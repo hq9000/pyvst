@@ -81,8 +81,8 @@ def test_play_note_twice(host):
     # assert abs(sound1 - sound2).mean() / abs(sound1).mean() < 0.001
 
     # after changing all the parameters, it should still work
-    for i in range(host.vst_synths.num_params):
-        host.vst_synths.set_param_value(i, random.random())
+    for i in range(host.vst_synth.num_params):
+        host.vst_synth.set_param_value(i, random.random())
 
     # TODO same
     sound1 = host.play_note()
