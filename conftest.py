@@ -13,9 +13,13 @@ def _find_test_effects():
 
 def _find_test_plugins(paths_file):
     """
-        One plugin path per line in a file
-        """
-    with open('.test_synth_paths.txt') as f:
+    One plugin path per line in a file
+    Lines starting with a # are considered comments and ignored
+
+    :type paths_file: str
+    :return: List[str]
+    """
+    with open(paths_file) as f:
         path = f.read().strip()
 
     lines = path.split('\n')
@@ -29,17 +33,17 @@ _VST_EFFECTS = _find_test_effects()
 
 
 @pytest.fixture(params=_VST_SYNTHS)
-def vst_synth(request):
+def vst_synth_path(request):
     return request.param
 
 
 @pytest.fixture(params=_VST_EFFECTS)
-def vst_effect(request):
+def vst_effect_path(request):
     return request.param
 
 
 @pytest.fixture()
-def host(vst_synth):
+def host(vst_synth_path):
     """SimpleHost containing a loaded synth vst."""
-    host = SimpleHost(vst_synth)
+    host = SimpleHost(vst_synth_path)
     return host
