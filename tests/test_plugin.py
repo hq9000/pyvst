@@ -1,6 +1,7 @@
 # import numpy as np
 
 from pyvst import VstPlugin, SimpleHost
+import numpy as np
 
 
 def test_plugin(vst_synth_path):
@@ -44,3 +45,15 @@ def test_segfault(vst_synth_path):
 def test_process_replacing_effect(vst_effect_path):
     host = SimpleHost()
     vst = VstPlugin(vst_effect_path, host._callback)
+
+    inputs = np.ones((2, 1024), dtype=np.float32)
+    outputs = np.zeros((2, 1024), dtype=np.float32)
+    #
+    # vst.process_replacing(outputs, inputs)
+    # vst.set_param_value(0, 0.5)
+    #print(vst.get_param_name(0))
+    #print(vst.get_param_value(0))
+
+    result = vst.process(None, 512)
+
+    print(123)

@@ -42,11 +42,25 @@ class VstPlugin:
         if audio_master_callback is None:
             audio_master_callback = _default_audio_master_callback
         self._lib = cdll.LoadLibrary(filename)
-        self._lib.VSTPluginMain.argtypes = [AUDIO_MASTER_CALLBACK_TYPE]
-        self._lib.VSTPluginMain.restype = POINTER(AEffect)
+
+        functions_to_try = [
+            'VSTPluginMain',
+            'main'
+        ]
+
+        entry_function = None
+        for name in functions_to_try:
+            if hasattr(self._lib, name):
+                entry_function = getattr(self._lib, name)
+                break
+
+        assert entry_function is not None, "None of the supported entry functions found in " + filename
+
+        entry_function.argtypes = [AUDIO_MASTER_CALLBACK_TYPE]
+        entry_function.restype = POINTER(AEffect)
 
         with pipes() if not verbose else contextlib.suppress():
-            self._effect = self._lib.VSTPluginMain(AUDIO_MASTER_CALLBACK_TYPE(
+            self._effect = entry_function(AUDIO_MASTER_CALLBACK_TYPE(
                 audio_master_callback)).contents
 
         assert self._effect.magic == MAGIC
